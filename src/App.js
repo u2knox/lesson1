@@ -1,43 +1,36 @@
-import React, { useState } from "react";
+import { Posts } from "./Posts";
+import { useEffect } from "react";
 
 function App() {
-  const [items, setItems] = useState([
-    {
-      title: "iphone",
-      price: 1000,
-    },
-    {
-      title: "ipod",
-      price: 600,
-    },
-    {
-      title: "imac",
-      price: 1200,
-    },
-  ]);
-
-  const setItemAmount = (index, value) => {
-    const copyItems = [...items];
-    copyItems[index].count = value;
-    setItems(copyItems);
-  };
-
+  useEffect(() => {
+    const accessDate = new Date(localStorage.getItem("access_date"));
+    if (new Date().getTime() > accessDate.getTime() + 3600) {
+      fetch("https://accounts.spotify.com/api/token", {
+        method: 'POST',
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: "grant_type=client_credentials&client_id=2136a4c5d664491a8dda6eceb76eafd0&client_secret=6fe6fa186f2a4e3888a03f7ddd3b452c"
+      })
+        .then(res => res.json())
+        .then(json => {
+          localStorage.setItem("access_token", json.access_token);
+          localStorage.setItem("access_date", new Date().toISOString());
+        });
+    }
+    const accessToken = localStorage.getItem("access_token");
+    fetch("https://api.spotify.com/v1/search?q=test&type=track", {
+      headers: {
+        Authorization: 'Bearer ' + accessToken
+      }
+    })
+      .then(res => res.json())
+      .then(json => console.log(json))
+    return () => {}
+  }, []);
   return (
     <div className="App">
-      {items.map((item, index) => (
-        <div key={item.title}>
-          {item.title}: {item.price}
-          {!item.count ? (
-            <button onClick={() => setItemAmount(index, 1)}>Купить</button>
-          ) : (
-            <div>
-              <button onClick={() => setItemAmount(index, item.count - 1)}>-</button>
-              <b>{item.count}</b>
-              <button onClick={() => setItemAmount(index, item.count + 1)}>+</button>
-            </div>
-          )}
-        </div>
-      ))}
+      <Posts></Posts>
     </div>
   );
 }
